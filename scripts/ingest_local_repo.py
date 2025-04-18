@@ -16,7 +16,6 @@ from qdrant_client.http import models
 load_dotenv()
 
 # --- Config ---
-REPO_DIR = "../fleetsu-app"
 COLLECTION_NAME = os.getenv("QDRANT_COLLECTION", "codebase")
 QDRANT_HOST = os.getenv("QDRANT_HOST", "localhost")
 QDRANT_PORT = int(os.getenv("QDRANT_PORT", 6333))
@@ -53,14 +52,19 @@ def get_repo_metadata(repo_path: str):
 
 # --- Args ---
 parser = argparse.ArgumentParser(description="Ingest source code into Qdrant.")
+parser.add_argument("repo_dir", help="Path to the repository to ingest")
 parser.add_argument("--refresh", action="store_true",
                     help="Refresh Qdrant collection before ingesting")
 args = parser.parse_args()
 
+# Validate repository directory
+if not os.path.isdir(args.repo_dir):
+    raise ValueError(f"Repository directory does not exist: {args.repo_dir}")
+
 # --- File Collection ---
 all_files = []
 for ext in EXTENSION_LANGUAGE_MAP.keys():
-    pattern = os.path.join(REPO_DIR, f"**/*{ext}")
+    pattern = os.path.join(args.repo_dir, f"**/*{ext}")
     all_files.extend(glob.glob(pattern, recursive=True))
 
 documents = []
@@ -77,7 +81,7 @@ for file_path in all_files:
         print(f"Failed to load {file_path}: {e}")
 
 # --- Git Metadata ---
-repo_name, commit_sha = get_repo_metadata(REPO_DIR)
+repo_name, commit_sha = get_repo_metadata(args.repo_dir)
 
 # --- Chunking ---
 chunks = []

@@ -12,7 +12,7 @@ Usage:
   ./scripts/inspect_qdrant.py --repo <repo_name> --language <language>
 
 Example:
-  ./scripts/inspect_qdrant.py --repo fleetsu-app --language python
+  ./scripts/inspect_qdrant.py --repo repo-dir --language python
 """
 
 from qdrant_client import QdrantClient
