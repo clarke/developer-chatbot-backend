@@ -53,11 +53,14 @@ db = QdrantVectorStore(
 
 # --- Setup QA Chain ---
 prompt_template = (
-    "Use the following pieces of context to answer the question at the end. "
-    "If you don't know the answer, just say that you don't know. "
-    "Don't try to make up an answer. Only use the information provided in "
-    "the context. Do not use any external knowledge.\n\n"
-    "Context:\n{context}\n\n"
+    "You are a codebase assistant that answers questions about the provided code "  # noqa: E501
+    "snippets. Follow these rules:\n"
+    "1. For questions about code in the snippets, provide detailed answers\n"
+    "2. For questions about code not in the snippets, say 'I don't know'\n"
+    "3. Do not make assumptions about code that isn't shown\n"
+    "4. Do not mention files or code that aren't in the snippets\n"
+    "5. When answering, reference specific parts of the code snippets\n\n"
+    "Code snippets:\n{context}\n\n"
     "Question: {question}\n\n"
     "Answer:"
 )
@@ -71,13 +74,16 @@ qa_chain = RetrievalQA.from_chain_type(
     llm=llm,
     retriever=db.as_retriever(
         search_kwargs={
-            "k": 4,  # Reduce to 2 most relevant documents
-            "score_threshold": 0.7  # Only return documents with high relevance
+            "k": 4,
+            "score_threshold": 0.7
         }
     ),
     return_source_documents=True,
     chain_type="stuff",
-    chain_type_kwargs={"prompt": PROMPT}
+    chain_type_kwargs={
+        "prompt": PROMPT,
+        "document_separator": "\n\n---\n\n"
+    }
 )
 
 
@@ -91,15 +97,18 @@ class QueryRequest(BaseModel):
 async def ask_codebase(query: QueryRequest):
     try:
         result = qa_chain(query.question)
+        sources = []
+        for doc in result["source_documents"]:
+            source = doc.metadata.get("source")
+            if source:  # Only include sources that exist
+                sources.append({
+                    "source": source,
+                    "snippet": doc.page_content[:200]
+                })
+
         return {
             "answer": result["result"],
-            "sources": [
-                {
-                    "source": doc.metadata.get("source"),
-                    "snippet": doc.page_content[:200]
-                }
-                for doc in result["source_documents"]
-            ]
+            "sources": sources
         }
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
