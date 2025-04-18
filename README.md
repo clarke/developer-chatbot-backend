@@ -126,3 +126,41 @@ curl -X POST "http://localhost:8000/ask" \
 3. Commit your changes
 4. Push to the branch
 5. Create a Pull Request
+
+## Testing
+
+The application includes a comprehensive test suite that runs completely offline by mocking external dependencies (OpenAI and Qdrant).
+
+### Running Tests
+
+1. Install test dependencies:
+```bash
+pip install -r requirements-test.txt
+```
+
+2. Run the test suite:
+```bash
+pytest tests/
+```
+
+### Test Coverage
+
+The test suite includes:
+
+- `test_health_check`: Verifies the health check endpoint returns the expected response
+- `test_ask_endpoint_success`: Tests successful question-answering with mocked responses
+- `test_ask_endpoint_invalid_request`: Validates proper handling of invalid requests
+- `test_ask_endpoint_error`: Ensures proper error handling and response formatting
+
+### Test Dependencies
+
+- `pytest`: Test framework
+- `httpx`: Required by FastAPI TestClient
+- `pytest-asyncio`: For async test support
+
+### Mocking Strategy
+
+External services are mocked using pytest fixtures:
+- The `mock_qa_chain` fixture simulates the QA chain responses
+- All OpenAI and Qdrant calls are intercepted and replaced with test data
+- Tests can run without internet connection or external service access
