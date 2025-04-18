@@ -21,6 +21,8 @@ The system uses local embeddings and language models to understand and respond t
 - Docker support for containerized deployment
 - Fully offline operation with local models
 - High-quality embeddings and language models
+- Dependency injection for better testability
+- Comprehensive test suite with proper mocking
 
 ## Prerequisites
 
@@ -96,7 +98,7 @@ python scripts/query.py "your question here"
 
 3. Inspect the Qdrant database:
 ```bash
-python scripts/inspect_qdrant.py
+python scripts/inspect_qdrant.py [--repo <repo_name>] [--language <language>] [--limit <number>]
 ```
 
 ### API Usage
@@ -124,9 +126,13 @@ curl -X POST "http://localhost:8000/ask" \
 │   ├── ingest_local_repo.py  # Code ingestion script
 │   ├── inspect_qdrant.py     # Database inspection
 │   └── query.py              # Query interface
+├── tests/                    # Test suite
+│   ├── test_main.py          # API endpoint tests
+│   └── conftest.py           # Test configuration
 ├── models/                   # Local model storage
 ├── qdrant_data/              # Qdrant database storage
 ├── docker-compose.yml        # Docker Compose configuration
+├── pytest.ini                # Pytest configuration
 └── requirements.txt          # Python dependencies
 ```
 
@@ -140,7 +146,7 @@ curl -X POST "http://localhost:8000/ask" \
 
 ## Testing
 
-The application includes a comprehensive test suite that runs completely offline by mocking external dependencies (OpenAI and Qdrant).
+The application includes a comprehensive test suite that uses FastAPI's dependency injection system for clean and maintainable tests.
 
 ### Running Tests
 
@@ -163,15 +169,17 @@ The test suite includes:
 - `test_ask_endpoint_invalid_request`: Validates proper handling of invalid requests
 - `test_ask_endpoint_error`: Ensures proper error handling and response formatting
 
+### Test Architecture
+
+The test suite uses FastAPI's dependency injection system:
+
+- Dependencies are properly injected and can be overridden in tests
+- External services (Qdrant, language models) are mocked using pytest fixtures
+- Tests run completely offline without external service access
+- Warning filters are configured in `pytest.ini` for clean test output
+
 ### Test Dependencies
 
 - `pytest`: Test framework
 - `httpx`: Required by FastAPI TestClient
 - `pytest-asyncio`: For async test support
-
-### Mocking Strategy
-
-External services are mocked using pytest fixtures:
-- The `mock_qa_chain` fixture simulates the QA chain responses
-- All OpenAI and Qdrant calls are intercepted and replaced with test data
-- Tests can run without internet connection or external service access
