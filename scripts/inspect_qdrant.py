@@ -66,12 +66,22 @@ def show_samples(repo: str = None, language: str = None, limit: int = 5):
     filter_obj = Filter(must=conditions) if conditions else None
 
     print(f"\n📄 Showing up to {limit} samples...")
-    points = qdrant_client.scroll(
-        collection_name=COLLECTION_NAME,
-        limit=limit,
-        with_payload=True,
-        filter=filter_obj
-    )[0]
+    
+    # Use search instead of scroll for filtered queries
+    if filter_obj:
+        points = qdrant_client.search(
+            collection_name=COLLECTION_NAME,
+            query_vector=[0] * 768,  # Dummy vector for filtering
+            limit=limit,
+            with_payload=True,
+            query_filter=filter_obj
+        )
+    else:
+        points = qdrant_client.scroll(
+            collection_name=COLLECTION_NAME,
+            limit=limit,
+            with_payload=True
+        )[0]
 
     for idx, pt in enumerate(points, 1):
         payload = pt.payload or {}

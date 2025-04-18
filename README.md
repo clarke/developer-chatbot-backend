@@ -1,6 +1,6 @@
 # Developer Chatbot Backend
 
-A powerful question-answering system that enables natural language interaction with your codebase. This application uses LangChain, Qdrant, and OpenAI to provide intelligent responses to questions about your code.
+A powerful question-answering system that enables natural language interaction with your codebase. This application uses LangChain, Qdrant, and local language models to provide intelligent responses to questions about your code.
 
 ## Overview
 
@@ -10,7 +10,7 @@ This application provides a developer-friendly interface to interact with codeba
 2. A vector database (Qdrant) for efficient code search and retrieval
 3. Utility scripts for code ingestion and inspection
 
-The system uses OpenAI's embeddings and language models to understand and respond to questions about your codebase, making it easier to navigate and understand complex codebases.
+The system uses local embeddings and language models to understand and respond to questions about your codebase, making it easier to navigate and understand complex codebases. All processing is done locally, ensuring privacy and offline operation.
 
 ## Features
 
@@ -19,13 +19,16 @@ The system uses OpenAI's embeddings and language models to understand and respon
 - Source code chunking and semantic search
 - REST API for easy integration
 - Docker support for containerized deployment
+- Fully offline operation with local models
+- High-quality embeddings and language models
 
 ## Prerequisites
 
 - Python 3.8+
 - Docker and Docker Compose
-- OpenAI API key
 - Git (for repository ingestion)
+- 8GB+ RAM (for running local models)
+- 5GB+ disk space (for model storage)
 
 ## Installation
 
@@ -48,10 +51,17 @@ pip install -r requirements.txt
 
 4. Create a `.env` file with the following variables:
 ```
-OPENAI_API_KEY=your_openai_api_key
 QDRANT_HOST=localhost
 QDRANT_PORT=6333
 QDRANT_COLLECTION=codebase
+MODEL_PATH=models/mistral-7b-instruct-v0.1.Q4_K_M.gguf
+```
+
+5. Download the required models:
+```bash
+mkdir -p models
+cd models
+curl -L -o mistral-7b-instruct-v0.1.Q4_K_M.gguf https://huggingface.co/TheBloke/Mistral-7B-Instruct-v0.1-GGUF/resolve/main/mistral-7b-instruct-v0.1.Q4_K_M.gguf
 ```
 
 ## Usage
@@ -114,6 +124,7 @@ curl -X POST "http://localhost:8000/ask" \
 │   ├── ingest_local_repo.py  # Code ingestion script
 │   ├── inspect_qdrant.py     # Database inspection
 │   └── query.py              # Query interface
+├── models/                   # Local model storage
 ├── qdrant_data/              # Qdrant database storage
 ├── docker-compose.yml        # Docker Compose configuration
 └── requirements.txt          # Python dependencies

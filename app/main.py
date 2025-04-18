@@ -1,8 +1,8 @@
 from fastapi import FastAPI, HTTPException
-from langchain_openai import OpenAIEmbeddings
+from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_qdrant import QdrantVectorStore
 from langchain.chains import RetrievalQA
-from langchain_openai import ChatOpenAI
+from langchain_community.llms import GPT4All
 from qdrant_client import QdrantClient
 from pydantic import BaseModel
 import os
@@ -16,19 +16,25 @@ app = FastAPI(title="Codebase QA System")
 QDRANT_HOST = os.getenv("QDRANT_HOST", "localhost")
 QDRANT_PORT = int(os.getenv("QDRANT_PORT", 6333))
 COLLECTION_NAME = os.getenv("QDRANT_COLLECTION", "codebase")
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")  # Add this to your .env file
-
-if not OPENAI_API_KEY:
-    raise ValueError("OPENAI_API_KEY environment variable is not set")
+MODEL_PATH = os.getenv(
+    "MODEL_PATH",
+    "models/ggml-gpt4all-j-v1.3-groovy.bin"
+)
 
 # --- Load Model and Embedding ---
-embedding_model = OpenAIEmbeddings()
+embedding_model = HuggingFaceEmbeddings(
+    model_name="sentence-transformers/all-mpnet-base-v2",
+    model_kwargs={"device": "cpu"},
+    encode_kwargs={"normalize_embeddings": True}
+)
 
-# Initialize OpenAI LLM
-llm = ChatOpenAI(
-    model_name="gpt-3.5-turbo",
-    temperature=0.2,
-    max_tokens=512
+# Initialize GPT4All LLM
+llm = GPT4All(
+    model_path=MODEL_PATH,
+    max_tokens=512,
+    temp=0.2,
+    n_threads=4,
+    verbose=True
 )
 
 # --- Connect to Qdrant ---

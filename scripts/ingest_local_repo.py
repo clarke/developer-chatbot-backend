@@ -8,10 +8,11 @@ from dotenv import load_dotenv
 
 from langchain_community.document_loaders import TextLoader
 from langchain.text_splitter import RecursiveCharacterTextSplitter
-from langchain_openai import OpenAIEmbeddings
 from langchain_qdrant import QdrantVectorStore
 from qdrant_client import QdrantClient
 from qdrant_client.http import models
+from langchain_huggingface import HuggingFaceEmbeddings
+
 
 load_dotenv()
 
@@ -19,10 +20,6 @@ load_dotenv()
 COLLECTION_NAME = os.getenv("QDRANT_COLLECTION", "codebase")
 QDRANT_HOST = os.getenv("QDRANT_HOST", "localhost")
 QDRANT_PORT = int(os.getenv("QDRANT_PORT", 6333))
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-
-if not OPENAI_API_KEY:
-    raise ValueError("OPENAI_API_KEY environment variable is not set")
 
 # File extension -> language
 EXTENSION_LANGUAGE_MAP = {
@@ -99,27 +96,28 @@ for doc in documents:
     chunks.extend(split_docs)
 
 # --- Embedding + Qdrant ---
-embeddings = OpenAIEmbeddings()
+embeddings = HuggingFaceEmbeddings(
+    model_name="sentence-transformers/all-mpnet-base-v2",
+    model_kwargs={"device": "cpu"},
+    encode_kwargs={"normalize_embeddings": True}
+)
 qdrant_client = QdrantClient(host=QDRANT_HOST, port=QDRANT_PORT)
 
-if args.refresh:
-    print(f"Refreshing collection '{COLLECTION_NAME}'...")
-    try:
-        qdrant_client.delete_collection(collection_name=COLLECTION_NAME)
-    except Exception as e:
-        print(f"Warning: Failed to delete existing collection: {e}")
-
+# Always delete and recreate the collection to ensure correct dimensions
+print(f"Recreating collection '{COLLECTION_NAME}'...")
 try:
-    qdrant_client.get_collection(collection_name=COLLECTION_NAME)
-except Exception:
-    print(f"Creating collection '{COLLECTION_NAME}'...")
-    qdrant_client.create_collection(
-        collection_name=COLLECTION_NAME,
-        vectors_config=models.VectorParams(
-            size=1536,
-            distance=models.Distance.COSINE
-        )
+    qdrant_client.delete_collection(collection_name=COLLECTION_NAME)
+except Exception as e:
+    print(f"Warning: Failed to delete existing collection: {e}")
+
+# Create new collection with correct dimensions
+qdrant_client.create_collection(
+    collection_name=COLLECTION_NAME,
+    vectors_config=models.VectorParams(
+        size=768,  # Updated to match sentence-transformers/all-mpnet-base-v2
+        distance=models.Distance.COSINE
     )
+)
 
 db = QdrantVectorStore(
     client=qdrant_client,

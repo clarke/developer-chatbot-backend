@@ -1,6 +1,6 @@
 services:
   qdrant:
-    image: qdrant/qdrant
+    image: qdrant/qdrant:latest
     container_name: qdrant
     ports:
       - "6333:6333"
@@ -8,17 +8,19 @@ services:
       - ./qdrant_data:/qdrant/storage
 
   app:
-    build: ./app
+    build: 
+      context: .
+      dockerfile: app/Dockerfile
     container_name: fastapi-codeqa
     ports:
       - "8000:8000"
-    environment:
-      QDRANT_HOST: qdrant
-      QDRANT_PORT: 6333
-      QDRANT_COLLECTION: codebase
     volumes:
-      - ./app:/app
-      - ./repos:/repos
+      - ./models:/app/models
+    environment:
+      - QDRANT_HOST=qdrant
+      - QDRANT_PORT=6333
+      - QDRANT_COLLECTION=codebase
+      - MODEL_PATH=/app/models/ggml-gpt4all-j-v1.3-groovy.bin
     command: uvicorn main:app --host 0.0.0.0 --port 8000 --reload
     depends_on:
       - qdrant
