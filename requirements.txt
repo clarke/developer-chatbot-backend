@@ -12,3 +12,4 @@ llama-cpp-python
 langchain-huggingface
 torch
 tqdm
+qdrant-client
