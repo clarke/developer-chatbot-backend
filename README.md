@@ -107,16 +107,16 @@ curl -X POST "http://localhost:8000/ask" \
 
 ```
 .
-├── app/                    # FastAPI application
-│   ├── main.py            # Main application code
-│   └── Dockerfile         # Docker configuration
-├── scripts/               # Utility scripts
+├── app/                      # FastAPI application
+│   ├── main.py               # Main application code
+│   └── Dockerfile            # Docker configuration
+├── scripts/                  # Utility scripts
 │   ├── ingest_local_repo.py  # Code ingestion script
 │   ├── inspect_qdrant.py     # Database inspection
 │   └── query.py              # Query interface
-├── qdrant_data/           # Qdrant database storage
-├── docker-compose.yml     # Docker Compose configuration
-└── requirements.txt       # Python dependencies
+├── qdrant_data/              # Qdrant database storage
+├── docker-compose.yml        # Docker Compose configuration
+└── requirements.txt          # Python dependencies
 ```
 
 ## Contributing
