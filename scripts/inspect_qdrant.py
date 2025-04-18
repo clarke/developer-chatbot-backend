@@ -43,8 +43,9 @@ def get_metadata_summary():
     languages = set()
     for pt in points:
         payload = pt.payload or {}
-        repos.add(payload.get("repo", "unknown"))
-        languages.add(payload.get("language", "unknown"))
+        metadata = payload.get("metadata", {})
+        repos.add(metadata.get("repo", "unknown"))
+        languages.add(metadata.get("language", "unknown"))
 
     print(f"🔹 Repos Found: {repos}")
     print(f"🔹 Languages Found: {languages}")
@@ -56,11 +57,12 @@ def show_samples(repo: str = None, language: str = None, limit: int = 5):
 
     if repo:
         conditions.append(
-            FieldCondition(key="repo", match=MatchValue(value=repo))
+            FieldCondition(key="metadata.repo", match=MatchValue(value=repo))
         )
     if language:
         conditions.append(
-            FieldCondition(key="language", match=MatchValue(value=language))
+            FieldCondition(key="metadata.language",
+                           match=MatchValue(value=language))
         )
 
     filter_obj = Filter(must=conditions) if conditions else None
@@ -85,18 +87,19 @@ def show_samples(repo: str = None, language: str = None, limit: int = 5):
 
     for idx, pt in enumerate(points, 1):
         payload = pt.payload or {}
+        metadata = payload.get("metadata", {})
         print(f"\n--- Document {idx} ---")
         print(
-            f"File: {payload.get('filename')} | "
-            f"Lang: {payload.get('language')} | "
-            f"Repo: {payload.get('repo')}"
+            f"File: {metadata.get('filename')} | "
+            f"Lang: {metadata.get('language')} | "
+            f"Repo: {metadata.get('repo')}"
         )
         print(
-            f"SHA: {payload.get('commit_sha')} | "
-            f"Source: {payload.get('source')}"
+            f"SHA: {metadata.get('commit_sha')} | "
+            f"Source: {metadata.get('source')}"
         )
-        snippet = payload.get("text") or payload.get("page_content") or "<No content>"  # noqa: E501
-        print(f"Snippet: {snippet[:300].strip()}...")
+        snippet = payload.get("text", "").strip()[:300]
+        print(f"Snippet: {snippet}...")
     print("\n--- End of Samples ---\n")
 
 

@@ -51,8 +51,26 @@ EXTENSION_LANGUAGE_MAP = {
     ".py": "python",
     ".php": "php",
     ".ts": "ts",
+    ".tsx": "ts",
     ".js": "js",
+    ".jsx": "js",
     ".html": "html",
+    ".md": "markdown",
+    ".cpp": "cpp",
+    ".c": "c",
+    ".h": "cpp",
+    ".hpp": "cpp",
+    ".java": "java",
+    ".go": "go",
+    ".rs": "rust",
+    ".rb": "ruby",
+    ".cs": "csharp",
+    ".sol": "sol",
+    ".lua": "lua",
+    ".pl": "perl",
+    ".hs": "haskell",
+    ".ex": "elixir",
+    ".ps1": "powershell"
 }
 
 
@@ -69,9 +87,15 @@ def process_file(file_path: str) -> Dict[str, Any]:
         loader = TextLoader(file_path)
         doc = loader.load()[0]
         ext = os.path.splitext(file_path)[1]
-        doc.metadata["language"] = EXTENSION_LANGUAGE_MAP.get(ext, "text")
-        doc.metadata["filename"] = os.path.basename(file_path)
-        doc.metadata["source"] = file_path
+        doc.metadata.update({
+            "language": EXTENSION_LANGUAGE_MAP.get(ext, "text"),
+            "filename": os.path.basename(file_path),
+            "source": file_path,
+            "repo": os.path.basename(
+                os.path.dirname(os.path.dirname(file_path))
+            ),
+            "commit_sha": "local"  # For local files
+        })
         return {"success": True, "doc": doc}
     except Exception as e:
         return {"success": False, "error": str(e), "file": file_path}
@@ -154,9 +178,6 @@ def main():
             else:
                 print(f"Failed to load {result['file']}: {result['error']}")
 
-    # --- Git Metadata ---
-    repo_name, commit_sha = get_repo_metadata(args.repo_dir)
-
     # --- Chunking ---
     print("Chunking documents...")
     chunks = []
@@ -169,8 +190,8 @@ def main():
         )
         split_docs = splitter.split_documents([doc])
         for chunk in split_docs:
-            chunk.metadata["repo"] = repo_name
-            chunk.metadata["commit_sha"] = commit_sha
+            # Preserve all metadata from the original document
+            chunk.metadata.update(doc.metadata)
         chunks.extend(split_docs)
 
     # --- Embedding + Qdrant ---
