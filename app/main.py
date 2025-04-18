@@ -1,8 +1,8 @@
 from fastapi import FastAPI, HTTPException
-from langchain_community.embeddings import HuggingFaceEmbeddings
+from langchain_huggingface import HuggingFaceEmbeddings
 from langchain_qdrant import QdrantVectorStore
 from langchain.chains import RetrievalQA
-from langchain_community.llms import GPT4All
+from langchain_community.llms import LlamaCpp
 from qdrant_client import QdrantClient
 from pydantic import BaseModel
 import os
@@ -18,7 +18,7 @@ QDRANT_PORT = int(os.getenv("QDRANT_PORT", 6333))
 COLLECTION_NAME = os.getenv("QDRANT_COLLECTION", "codebase")
 MODEL_PATH = os.getenv(
     "MODEL_PATH",
-    "models/ggml-gpt4all-j-v1.3-groovy.bin"
+    "models/llama-2-7b-chat.Q4_K_M.gguf"
 )
 
 # --- Load Model and Embedding ---
@@ -28,11 +28,12 @@ embedding_model = HuggingFaceEmbeddings(
     encode_kwargs={"normalize_embeddings": True}
 )
 
-# Initialize GPT4All LLM
-llm = GPT4All(
+# Initialize LlamaCpp LLM
+llm = LlamaCpp(
     model_path=MODEL_PATH,
+    temperature=0.2,
     max_tokens=512,
-    temp=0.2,
+    n_ctx=2048,
     n_threads=4,
     verbose=True
 )
@@ -48,8 +49,11 @@ db = QdrantVectorStore(
 # --- Setup QA Chain ---
 qa_chain = RetrievalQA.from_chain_type(
     llm=llm,
-    retriever=db.as_retriever(),
-    return_source_documents=True
+    retriever=db.as_retriever(
+        search_kwargs={"k": 4}  # Return top 4 most relevant documents
+    ),
+    return_source_documents=True,
+    chain_type="stuff"
 )
 
 
