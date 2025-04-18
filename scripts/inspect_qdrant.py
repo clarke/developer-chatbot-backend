@@ -66,7 +66,7 @@ def show_samples(repo: str = None, language: str = None, limit: int = 5):
     filter_obj = Filter(must=conditions) if conditions else None
 
     print(f"\n📄 Showing up to {limit} samples...")
-    
+
     # Use search instead of scroll for filtered queries
     if filter_obj:
         points = qdrant_client.search(
