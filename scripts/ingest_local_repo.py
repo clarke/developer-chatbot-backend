@@ -27,6 +27,25 @@ EMBEDDING_BATCH_SIZE = 64
 # For M1 Max: 10 cores * 2 threads per core = 20 workers
 MAX_WORKERS = min(20, (os.cpu_count() or 4) * 2)  # I/O bound tasks
 
+# Directories to ignore when collecting files
+IGNORED_DIRS = {
+    "node_modules",
+    "venv",
+    ".venv",
+    "env",
+    ".env",
+    "__pycache__",
+    ".git",
+    ".github",
+    ".idea",
+    ".vscode",
+    "dist",
+    "build",
+    "coverage",
+    ".pytest_cache",
+    ".mypy_cache",
+}
+
 # File extension -> language
 EXTENSION_LANGUAGE_MAP = {
     ".py": "python",
@@ -35,6 +54,13 @@ EXTENSION_LANGUAGE_MAP = {
     ".js": "js",
     ".html": "html",
 }
+
+
+def should_ignore_path(path: str) -> bool:
+    """Check if a path should be ignored based on the ignored
+    directories list."""
+    path_parts = path.split(os.sep)
+    return any(ignored_dir in path_parts for ignored_dir in IGNORED_DIRS)
 
 
 def process_file(file_path: str) -> Dict[str, Any]:
@@ -108,7 +134,10 @@ def main():
     all_files = []
     for ext in EXTENSION_LANGUAGE_MAP.keys():
         pattern = os.path.join(args.repo_dir, f"**/*{ext}")
-        all_files.extend(glob.glob(pattern, recursive=True))
+        files = glob.glob(pattern, recursive=True)
+        # Filter out files in ignored directories
+        files = [f for f in files if not should_ignore_path(f)]
+        all_files.extend(files)
 
     # --- Parallel File Processing ---
     print(
