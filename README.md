@@ -1,6 +1,6 @@
 # Developer Chatbot Backend
 
-A powerful codebase question-answering system that enables natural language interaction with your codebase. This application uses LangChain, Qdrant, and OpenAI to provide intelligent responses to questions about your code.
+A powerful question-answering system that enables natural language interaction with your codebase. This application uses LangChain, Qdrant, and OpenAI to provide intelligent responses to questions about your code.
 
 ## Overview
 
